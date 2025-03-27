@@ -15,7 +15,7 @@ Random.seed!(3213)
 
 
 
-function solveCo_2_Plex(fun::Function,g,costs,bool,name,pseudo_partition)
+function solveCo_2_Plex(fun::Function,g,costs,bool,name,pseudo_partition) # Generic function to launch an algorithm over a decomposed instance
 	
 
 	bar_g = complement(g)
@@ -59,7 +59,7 @@ function solveCo_2_Plex(fun::Function,g,costs,bool,name,pseudo_partition)
 	
 end
 
-function solveInstanceSimple(fName, co_2_plex)
+function solveInstanceSimple(fName, co_2_plex) # Launch the simple model over all instances
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -96,7 +96,7 @@ function solveInstanceSimple(fName, co_2_plex)
         end
 end
 
-function solveInstanceSimpleNeigh(fName, co_2_plex)
+function solveInstanceSimpleNeigh(fName, co_2_plex) # Launch the reinforced simple model over all instances
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -133,7 +133,7 @@ function solveInstanceSimpleNeigh(fName, co_2_plex)
         end
 end
 
-function solveInstanceStableTrue(fName, co_2_plex)
+function solveInstanceStableTrue(fName, co_2_plex) # Launch the stable set over utter graph model over all instances with a dynamic separation of clique inequalities
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -168,7 +168,7 @@ function solveInstanceStableTrue(fName, co_2_plex)
 		end
         end
 end
-function solveInstanceStableFalse(fName, co_2_plex)
+function solveInstanceStableFalse(fName, co_2_plex) # Launch the stable set over utter graph model over all instances 
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -203,7 +203,7 @@ function solveInstanceStableFalse(fName, co_2_plex)
 		end
         end
 end
-function solveInstanceProjectedFormTrue(fName, co_2_plex)
+function solveInstanceProjectedFormTrue(fName, co_2_plex) ## Launch the projected model over all instances with a dynamic separation of clique inequalities
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -240,7 +240,9 @@ function solveInstanceProjectedFormTrue(fName, co_2_plex)
 		end
         end
 end
-function solveInstanceProjectedFormFalse(fName, co_2_plex)
+
+### Interface to project the 
+function solveInstanceProjectedFormFalse(fName, co_2_plex) # Launch the projected model over all instances 
 	
 	open(fName) do f
 		for (i,line) in enumerate(eachline(f))
@@ -278,38 +280,15 @@ end
 
 
 
-#writeChiDOIRel(df_doi,df_basic)
-#y=getNeighborhoods(g)
-
-
-#SimpleModel(g,costs,true)
-#SimpleModel(g,costs,false)
+## The next three lines permit the warm start of JuMP
 
 g = SimpleGraph(lecture_graphe("data/miles250.col"))
 costs = [1 for i = 1 :nv(g)]
-
 ProjectedForm(g,costs,true,0.0)
 
 
-
-
-#g = SimpleGraph(lecture_graphe("data/1-FullIns_5.col"))
-#costs = [1 for i = 1 :nv(g)]
-
-#println("c lu")
-#solveCo_2_Plex(StableSetInTotalNoSep,g,costs, true,"yo")
-#g1 = SimpleGraph(lecture_graphe("data/1-FullIns_3.col"))
-
-#println(SimpleModelSepNeigh(g1,[1 for i in vertices(g1)],false,0))
-#println(SimpleModel(g1,[1 for i in vertices(g1)],false,0))
-#solveInstanceSimple("instances.txt",true)
+#### The following line is given as an example of how to launch an algorithm over a set of
+#### instances where instances.txt is a file containing the names of the instances to be launched
 solveInstanceSimpleNeigh("instances.txt",true)
 
 
-#solveInstanceStableTrue("instancesStableTrue.txt",true)
-
-#solveInstanceStableFalse("instancesStableFalse.txt",true)
-
-#solveInstanceProjectedFormTrue("instancesProjectedFormTrue.txt",true)
-
-#solveInstanceProjectedFormFalse("instancesProjectedFormFalse.txt",true)

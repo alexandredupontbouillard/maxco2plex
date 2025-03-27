@@ -1,7 +1,11 @@
 using Random
 using LightGraphs
 
-function lecture_graphe(filename) #pour obtenir une matrice d'adjacence
+################ This files contains tools for the setups of the formulations, heuristics, decompositions, and separation algorithm
+
+
+
+function lecture_graphe(filename) #to obtain an adjacency matrix
     
     open(filename) do f
         h = split(read(filename,String)," ")
@@ -30,7 +34,7 @@ function lecture_graphe(filename) #pour obtenir une matrice d'adjacence
 end
 
 
-function cleanGraph2plex(g,infbound)
+function cleanGraph2plex(g,infbound)  ## Remove as a preprocessing the vertices that cannot belong to the optimal 2-plex as their neighborhood is too small
 
 
 	bool = false
@@ -115,7 +119,7 @@ function iscandidate(g,i,K)
 	return true
 end
 
-function getBiggestLowestN(g1,list)
+function getBiggestLowestN(g1,list) ## returns the maximal and minimal size of a neighborhood
 	min = nv(g1)
 	max = 0
 
@@ -134,7 +138,7 @@ function getBiggestLowestN(g1,list)
 	return max,min
 end
 
-function heuristic_max_2_plex(g,alpha,K)
+function heuristic_max_2_plex(g,alpha,K)# builds a maximum 2-plex of a graph according 
 	
 	candidates = [i for i = 1 : nv(g)]
 	
@@ -158,12 +162,12 @@ function heuristic_max_2_plex(g,alpha,K)
 	
 
 
-	K = localSearch2Plex(g,K)
+	K = localSearch2Plex(g,K)  ##
 	# is_2plex(g,K)
 	return K
 end
 
-function is_2plex(g,k)
+function is_2plex(g,k) ## tests wether a set of vertices is a 2-plex
 	println("test")
 	g1 = induced_subgraph(g,k)[1]
 
@@ -180,7 +184,7 @@ function is_2plex(g,k)
 	return true
 
 end
-function localSearch2Plex(g,K)
+function localSearch2Plex(g,K) 
 	
 	notInK = [i for i = 1 : nv(g) if (! (i in K))]
 	
@@ -216,7 +220,7 @@ function heuristic_max_clique(g,costs)
 
 end
 
-function heuristic_max_stable(g,costs)  # ça marche 
+function heuristic_max_stable(g,costs)  # computes a maximum sized stable set
 
 
 	couples = [(i,costs[i]) for i = 1 : nv(g)]
@@ -356,7 +360,7 @@ function getStableOfSubset(g,set)
 end
 
 
-function augmentedTotalGraph(g)
+function augmentedTotalGraph(g) ### Computes the utter graph
 
 	result = SimpleGraph(nv(g)+ne(g))
 	

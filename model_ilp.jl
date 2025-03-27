@@ -6,8 +6,12 @@ using Dates
 include("graph.jl")
 
 
+####################### This file contains the differents models described in the corresponding papers
+####################### Each function correspond to a different model, some are reinforced with primal constraints: the separation is declared inside the function
+####################### Each function set a timeout of one hour to which the time spent solving the previous bricks of the decomposition is substracted
+####################### Each function returns the statistics  of the resolution
 
-function SimpleModel(g1,costfunction,separate,totalTime)
+function SimpleModel(g1,costfunction,separate,totalTime) ############ compact model of Balasundaram
 
 	g = g1
 	bar_g = complement(g)
@@ -16,14 +20,14 @@ function SimpleModel(g1,costfunction,separate,totalTime)
 	
 	result = Model( CPLEX.Optimizer)
 	MOI.set(result, MOI.Silent(), true)
-	set_time_limit_sec(result, max(1,3600.0-totalTime))
-	@variable(result,   1 >= x[1 : nv(g)]>= 0,Int)
+	set_time_limit_sec(result, max(1,3600.0-totalTime))  ## Set a timeout depending on how much have been spent on the other bricks of the instance's 'decomposition
+	@variable(result,   1 >= x[1 : nv(g)]>= 0,Int)  # One variable by vertex
 
-	for i = 1 : nv(g)
+	for i = 1 : nv(g) # Each constraint tells that if a vertex is taken in the solution then at most one of its neighbors can be taken too
 		@constraint(result, sum(x[j] for j in neighbors(g,i) ) + (size(neighbors(g,i))[1] -1 ) *x[i] <= size(neighbors(g,i))[1])
 	end
 	nb_separate = 0
-	function separatingCliqueIq(cb_data)
+	function separatingCliqueIq(cb_data) ## Dynamic separation of  clique inequalities, 
 	        callback_called = true
 	        x_vals = callback_value.(Ref(cb_data), x)
         	
@@ -40,20 +44,20 @@ function SimpleModel(g1,costfunction,separate,totalTime)
 	end
 	
 	
-	if(separate)
+	if(separate)  ### If separation should be added
 		MOI.set(result, MOI.UserCutCallback(), separatingCliqueIq)
 	end
 	
 	
 	#MOI.set(result, MOI.HeuristicCallback(), heuristicc)
-	@objective(result ,Max, sum(x[i]*costfunction[i] for i = 1 : nv(g)))
+	@objective(result ,Max, sum(x[i]*costfunction[i] for i = 1 : nv(g)))  ## Set objective coefficient
 	
 	
 	
 	optimize!(result)
 
 
-	return termination_status(result), solve_time(result), node_count(result),nb_separate,objective_value(result)
+	return termination_status(result), solve_time(result), node_count(result),nb_separate,objective_value(result) ## return statistics 
 
 end
 
@@ -61,7 +65,7 @@ end
 
 
 
-function StableSetInTotalNoSep(g1,costfunction,with_edges,totalTime)
+function StableSetInTotalNoSep(g1,costfunction,with_edges,totalTime) ## Computes a maximum stable set of the utter graph
 	
 	g = g1
 	bar_g = complement(g)
@@ -74,28 +78,30 @@ function StableSetInTotalNoSep(g1,costfunction,with_edges,totalTime)
 
 	@variable(result,   1 >= z[1 : nv(tg)]>= 0,Int)
 	tt = now()
-	coloringTG = coloringVertices(tg_bar,g,index,true)  # a clique cover of TG
+	coloringTG = coloringVertices(tg_bar,g,index,true)  # a clique cover of TG so the formulation is valid
 	tt = (now()-tt).value / 1000
 	
-	set_time_limit_sec(result, 3600.0-totalTime-tt)
+	set_time_limit_sec(result, 3600.0-totalTime-tt) ## Set time limit 
 	
-	for i in coloringTG
+	for i in coloringTG  ## Add sufficiently enough clique constraints
 		@constraint(result, sum(z[j] for j in i) <= 1)
 	end
 	
-	if(with_edges)
+	if(with_edges) ## Should we add constraints for each edge of the utter graph
 		for e in edges(tg)
 			@constraint(result, z[src(e)] + z[dst(e)] <= 1)
 		end
 	end
+	
+	## Vertices of the utter graph associated with edges of the input graph cost double
 	@objective(result ,Max, sum(z[i]*costfunction[i] for i = 1 : nv(g)) + sum(z[index[src(e),dst(e)]]*(costfunction[src(e)] + costfunction[dst(e)])  for e in edges(g)))	
 		
 	optimize!(result)
-	return termination_status(result), solve_time(result)+ tt, node_count(result),0,objective_value(result)
+	return termination_status(result), solve_time(result)+ tt, node_count(result),0,objective_value(result)  ## return statistics
 
 end
 
-function StableSetInTotal(g1,costfunction,with_edges,totalTime)
+function StableSetInTotal(g1,costfunction,with_edges,totalTime) ## Computes a stable set of the utter graph reinforced by clique inequalities
 
 	
 	g = g1
@@ -131,7 +137,7 @@ function StableSetInTotal(g1,costfunction,with_edges,totalTime)
 	
 	@objective(result ,Max, sum(z[i]*costfunction[i] for i = 1 : nv(g)) + sum(z[index[src(e),dst(e)]]*(costfunction[src(e)] + costfunction[dst(e)])   for e in edges(g) ))
 	
-	function separatingCliqueIq(cb_data)
+	function separatingCliqueIq(cb_data) ## The clique separation algorithm
 	        callback_called = true
 	        z_vals = callback_value.(Ref(cb_data), z)
         	
@@ -154,7 +160,7 @@ function StableSetInTotal(g1,costfunction,with_edges,totalTime)
 
 end
 
-function coeffcientOfEdge(g,index, nb,stable) #renvoyer le coefficient de l'arête dans l'inégalité.
+function coeffcientOfEdge(g,index, nb,stable) #returns the coefficient of a variable in the clique constraint.
 	e = collect(edges(g))[nb-nv(g)]
 	if(src(e) in stable)
 		if(dst(e) in stable)
@@ -171,7 +177,7 @@ function coeffcientOfEdge(g,index, nb,stable) #renvoyer le coefficient de l'arê
 	end
 end
 
-function ProjectedForm(g1,costfunction,separate,totalTime)
+function ProjectedForm(g1,costfunction,separate,totalTime) ## The projected formulation  with a separation of clique inequalities
 
 	
 	g = g1
@@ -258,7 +264,7 @@ function debile(deg, i ,g,y_vals,index)
 
 end
 
-function SimpleModelSepNeigh(g1,costfunction,separate,totalTime)
+function SimpleModelSepNeigh(g1,costfunction,separate,totalTime) ## Implementation of the simple model reinforced with nbeighborhood inequalities separation
 	
 g = g1
 	bar_g = complement(g)
