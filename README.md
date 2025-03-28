@@ -19,7 +19,7 @@ This files contain some simple graph heuristics and algorithm to decompose a gra
 to compute the maximum weighted co-2-plex. 
 
 
-We mainly propose three new ILP formulatiosn that are declined into two variants each. This implies 6 new algorithms.
+We mainly propose three new ILP formulations that are declined into two variants each. This implies 6 new algorithms.
 These new formulations are formally described in the companion paper.
 
 
